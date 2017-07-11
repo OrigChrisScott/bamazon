@@ -1,0 +1,32 @@
+{
+  "name": "bamazon",
+  "version": "1.0.0",
+  "description": "A CLI for inventory management",
+  "main": "index.js",
+  "scripts": {
+    "prestart": "sh setup/welcome.sh",
+    "start": "npm install",
+    "poststart": "sh setup/launch.sh && node setup/install.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OrigChrisScott/bamazon.git"
+  },
+  "keywords": [
+    "CLI",
+    "eCommerce",
+    "Inventory",
+    "Management"
+  ],
+  "author": "Chris Scott",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OrigChrisScott/bamazon/issues"
+  },
+  "homepage": "https://github.com/OrigChrisScott/bamazon#readme",
+  "dependencies": {
+    "execsql": "0.0.3",
+    "inquirer": "^3.1.1",
+    "mysql": "^2.13.0"
+  }
+}
