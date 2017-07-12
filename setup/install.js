@@ -1,3 +1,5 @@
+
+const fs = require('fs');
 const execsql = require('execsql');
 const mysql = require('mysql');
 const inquirer = require('inquirer');
@@ -40,6 +42,10 @@ const dbSetup = function() {
 		let port = response.port;
 		let user = response.user;
 		let pass = response.pass;
+		let writeString = "exports.keys = {port: \'" + port + "\', user: \'" + user + "\', pass: \'" + pass + "\'}";
+		fs.writeFileSync('keys.js', writeString, function(err, res){
+			if (err) throw err;
+		});
 		let dbConfig = {
 			host: 'localhost',
 			user: response.user,
@@ -56,7 +62,7 @@ const dbSetup = function() {
 						Database and Tables successfully created.
 						Application ready for use.
 						Have fun!
-						
+
 					`;
 					console.log(exitMessage);
 				}
@@ -66,6 +72,3 @@ const dbSetup = function() {
 };
 
 dbSetup();
-
-module.exports = createConnection;
-

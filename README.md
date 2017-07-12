@@ -11,7 +11,12 @@ Installation:
 After installation:
    from the command prompt, type either of three functions -
 	"node bamazon.js"
-
+		This function allows you to purchase items from the storefront.  The prompts will ask you what item you'd like to buy and in what quantity.
+		After you make your selection, your order will be confirmed to you.
+		You will then be prompted for your next action.
+	
 	"node bamazonManager.js"
-
+		// Future development - not currently active
+			
 	"node bamazonSupervisor.js"
+		// Future development - not currently active
