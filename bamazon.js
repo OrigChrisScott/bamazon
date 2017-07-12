@@ -6,6 +6,7 @@ const consoleTable = require('cli-table');
 let itemArray = [];
 let choiceArray = [];
 
+// Create connection to MySQL database.
 const createConnection = () => {
 	let connection = mysql.createConnection({
 		host: 'localhost',
@@ -17,43 +18,69 @@ const createConnection = () => {
 	return connection;
 };
 
-function NewOrder(item_id, product_name, price, qty) {
+// Constructor function for creating customer orders and building output tables for console.
+function CustOrder(item_id, product_name, price, qty, isReturn) {
 	this.item_id = item_id;
 	this.product_name = product_name;
 	this.price = price;
+	this.isReturn = isReturn;
 	this.qty = qty;
-	this.return = false;
-	this.displayOrder = function() {
-		let orderTotal = this.price * this.qty;
-		let table = new consoleTable({
+	// Check to see if order is a return. If so, make qty negative.
+	if (this.isReturn === true) this.qty *= -1;
+	// Build output table to display to user.
+	this.buildTable = function() {
+		// Currency sign (+ or -) is already handled in "if" statement below for design reasons.
+		let orderTotal = Math.abs(this.price * this.qty);
+		// Create table object with headers and fixed widths.
+		var table = new consoleTable({
 			head: ['Item ID', 'Product', 'Price', 'Qty', 'Order Total'],
 			colWidths: [10, 30, 15, 15, 20]
 		});
-		table.push([this.item_id, this.product_name, '$ ' + this.price.toLocaleString('en', {currency: 'USD', minimumFractionDigits: 2}), this.qty.toLocaleString(), '$ ' + orderTotal.toLocaleString('en', {currency: 'USD', minimumFractionDigits: 2})]);
-		let output = `
-
-		Thank You For Your Purchase!  Your confirmation is below:
-		`;
-		console.log(output)
-		console.log(table.toString() + '\n');
+		// Logic for currency sign manipulation based on whether order is a return.
+		var currencySign = '';
+		if (this.isReturn) {
+			currencySign = '-$';
+		} else {
+			currencySign = '$';
+		}
+		// Pushes order data to table object for display to user.
+		table.push([this.item_id, this.product_name, '$ ' + this.price.toLocaleString('en', {currency: 'USD', minimumFractionDigits: 2}), this.qty.toLocaleString(), currencySign + orderTotal.toLocaleString('en', {currency: 'USD', minimumFractionDigits: 2})]);
+		return table;
 	};
 };
 
+// Queries database for item user purchased, updates new quantity,
+// creates order object for later import into orders tables in database.
 const purchaseProduct = (id, qty) => {
+	// Establish MySQL connection.
 	let connection = createConnection();
 	connection.connect(function(err) {
 		if (err) throw err;
+		// Query database for products that match ordered product's ID.
 		connection.query("SELECT product_name, price, stock_quantity FROM products WHERE item_id = ?", [id], function(err, res, rows){
+			// Check to make sure ordered quantity is available.
 			if (res[0].stock_quantity >= qty) {
 				let product_name = res[0].product_name;
 				let price = res[0].price;
+				// Calculate new remaining quantity to update product in database.
 				let newqty = res[0].stock_quantity - parseInt(qty);
+				// Updates quantity count in database.
 				connection.query("UPDATE products SET stock_quantity = ? WHERE item_id = ?", [newqty, id], function(err, res, rows){
 					if (err) {
 						throw err;
 					} else {
-						let order = new NewOrder(id, product_name, price, qty);
-						order.displayOrder();
+						let isReturn = false;
+						// Create new order object (non-return).
+						let order = new CustOrder(id, product_name, price, qty, isReturn);
+						// Build table order output for user.
+						let tableOutput = order.buildTable();
+						// Output message and table to console.
+						let output = `
+
+		Thank You For Your Purchase!  Your confirmation is below:
+		`;
+						console.log(output)
+						console.log(tableOutput.toString() + '\n');
 						continueShopping(order);
 					}
 				});
@@ -61,6 +88,7 @@ const purchaseProduct = (id, qty) => {
 				console.log("Sorry, there is not enough of that product to fulfill your order.");
 				promptAction();
 			}
+			// Terminate MySQL active connection.
 			connection.end(function(err){
 				if (err) console.log("Waiting on MySQL connection to close.");
 			});
@@ -68,43 +96,37 @@ const purchaseProduct = (id, qty) => {
 	});
 };
 
-function ReturnOrder(order) {
-	this.item_id = order.item_id;
-	this.product_name = order.product_name;
-	this.price = order.price;
-	this.qty = (order.qty * -1);
-	this.return = true;
-	this.displayOrder = function() {
-		let table = new consoleTable({
-			head: ['Item ID', 'Product', 'Price', 'Qty', 'Order Total'],
-			colWidths: [10, 30, 15, 15, 20]
-		});
-		let orderTotal = (this.price * this.qty) * (-1);
-		table.push([this.item_id, this.product_name, '$ ' + this.price.toLocaleString('en', {currency: 'USD', minimumFractionDigits: 2}), this.qty.toLocaleString(), '- $ ' + orderTotal.toLocaleString('en', {currency: 'USD', minimumFractionDigits: 2})]);
-		let output = `
-
-	We are sorry these items didn't work out for you.  Your confirmation is below:
-		`;
-		console.log(output)
-		console.log(table.toString() + '\n');
-	};
-};
-
+// Queries database for item user purchased, updates new quantity,
+// creates order object for later import into orders tables in database.
 const returnProduct = (order) => {
+	// Establish MySQL connection.
 	let connection = createConnection();
 	connection.connect(function(err) {
 		if (err) throw err;
 		let id = order.item_id;
+		// Query database for products that match ordered product's ID.
 		connection.query("SELECT product_name, price, stock_quantity FROM products WHERE item_id = ?", [id], function(err, res, rows){
 			let newqty = res[0].stock_quantity + parseInt(order.qty);
+			// Updates quantity count in database.
 			connection.query("UPDATE products SET stock_quantity = ? WHERE item_id = ?", [newqty, id], function(err, res, rows){
 				if (err) {
 					throw err;
 				} else {
-					let rOrder = new ReturnOrder(order);
-					rOrder.displayOrder();
+					let isReturn = true;
+					// Create new order object (return).
+					let rOrder = new CustOrder(order.item_id, order.product_name, order.price, order.qty, isReturn);
+					// Build table order output for user.
+					let tableOutput = rOrder.buildTable();
+					// Output message and table to console.
+					let output = `
+
+	We are sorry these items didn't work out for you.  Your confirmation is below:
+		`;
+					console.log(output)
+					console.log(tableOutput.toString() + '\n');
 					continueShopping(rOrder);
 				}
+				// Terminate MySQL active connection.
 				connection.end(function(err){
 					if (err) console.log("Waiting on MySQL connection to close.");
 				});
@@ -127,7 +149,13 @@ const promptAction = () => {
 		{
 			type: 'input',
 			name: 'qtyToBuy',
-			message: '    How many of this product would you like to buy:'
+			message: '    How many of this product would you like to buy:',
+			validate: function(input) {
+			return (!isNaN(input) && input >= 0);
+			},
+			filter: function(input) {
+				return Math.floor(Math.abs(input));
+			}
 		}
 	]).then(function(answers){
 		purchaseProduct(answers.idToBuy, answers.qtyToBuy);
