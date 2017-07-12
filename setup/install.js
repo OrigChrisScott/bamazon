@@ -42,7 +42,7 @@ const dbSetup = function() {
 		let port = response.port;
 		let user = response.user;
 		let pass = response.pass;
-		let writeString = "exports.keys = {port: \'" + port + "\', user: \'" + user + "\', pass: \'" + pass + "\''}";
+		let writeString = "exports.keys = {port: \'" + port + "\', user: \'" + user + "\', pass: \'" + pass + "\'}";
 		fs.writeFileSync('keys.js', writeString, function(err, res){
 			if (err) throw err;
 		});

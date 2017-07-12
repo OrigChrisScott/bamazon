@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/OrigChrisScott/bamazon#readme",
   "dependencies": {
+    "cli-table": "^0.3.1",
     "execsql": "0.0.3",
     "inquirer": "^3.1.1",
     "mysql": "^2.13.0"

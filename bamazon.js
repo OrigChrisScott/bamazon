@@ -164,7 +164,7 @@ const promptAction = () => {
 
 const continueShopping = (recentOrder) => {
 	choiceArray = ['\tReturn Your Recent Order', '\tMake a New Order', '\tExit'];
-	if (recentOrder.return === true) {
+	if (recentOrder.isReturn === true) {
 		choiceArray.shift('\tReturn Your Recent Order');
 	} else if (!choiceArray.includes('\tReturn Your Recent Order')) {
 		choiceArray.unshift('\tReturn Your Recent Order');
